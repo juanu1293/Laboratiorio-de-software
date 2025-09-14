@@ -1,0 +1,53 @@
+// models/userModel.js
+const pool = require("../db");
+
+// Crear usuario
+const createUser = async (userData) => {
+  const {
+    nombre,
+    apellido,
+    fecha_nacimiento,
+    lugar_nacimiento,
+    direccion_facturacion,
+    genero,
+    correo,
+    contrasena,
+    foto,
+    cedula,
+  } = userData;
+
+  const query = `
+    INSERT INTO usuario
+      (nombre, apellido, fecha_nacimiento, lugar_nacimiento, direccion_facturacion, genero, correo, contrasena, foto, tipo_usuario, cedula)
+    VALUES
+      ($1,$2,$3,$4,$5,$6,$7,$8,$9,'cliente',$10)
+    RETURNING id_usuario, nombre, apellido, correo, tipo_usuario
+  `;
+
+  const values = [
+    nombre,
+    apellido,
+    fecha_nacimiento,
+    lugar_nacimiento,
+    direccion_facturacion,
+    genero,
+    correo,
+    contrasena,
+    foto || null,
+    cedula,
+  ];
+
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
+// Buscar usuario por correo
+const findUserByEmail = async (correo) => {
+  const result = await pool.query(
+    "SELECT * FROM usuario WHERE correo = $1",
+    [correo]
+  );
+  return result.rows[0];
+};
+
+module.exports = { createUser, findUserByEmail };
