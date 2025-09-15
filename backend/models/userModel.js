@@ -17,7 +17,7 @@ const createUser = async (userData) => {
   } = userData;
 
   const query = `
-    INSERT INTO usuario
+    INSERT INTO usuario.usuario
       (nombre, apellido, fecha_nacimiento, lugar_nacimiento, direccion_facturacion, genero, correo, contrasena, foto, tipo_usuario, cedula)
     VALUES
       ($1,$2,$3,$4,$5,$6,$7,$8,$9,'cliente',$10)
@@ -44,9 +44,14 @@ const createUser = async (userData) => {
 // Buscar usuario por correo
 const findUserByEmail = async (correo) => {
   const result = await pool.query(
-    "SELECT * FROM usuario WHERE correo = $1",
+    "SELECT * FROM usuario.usuario WHERE correo = $1",
     [correo]
   );
+  return result.rows[0];
+};
+
+module.exports = { createUser, findUserByEmail };
+
   return result.rows[0];
 };
 
