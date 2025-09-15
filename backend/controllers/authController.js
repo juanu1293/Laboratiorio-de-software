@@ -1,6 +1,6 @@
 // controllers/userController.js
 const bcrypt = require("bcrypt");
-const { createUser } = require("../models/userModel");
+const { createUser,findUserByEmail } = require("../models/userModel");
 
 const registerUser = async (req, res) => {
   try {
@@ -40,7 +40,7 @@ const registerUser = async (req, res) => {
       usuario: newUser,
     });
   } catch (error) {
-    console.error("Error en registerUser:", error.message);
+    console.error("Error en registerUser:", error);
     res.status(500).json({ error: "Error en el servidor" });
   }
 };
@@ -59,9 +59,10 @@ const loginUser = async (req, res) => {
 
     res.json({ mensaje: "Login exitoso", usuario: user });
   } catch (error) {
-    console.error("Error en loginUser:", error.message);
+    console.error("Error en loginUser:", error);
     res.status(500).json({ error: "Error en el servidor" });
   }
 };
 
 module.exports = { registerUser, loginUser };
+
