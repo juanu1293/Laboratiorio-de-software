@@ -1,68 +1,80 @@
-// controllers/userController.js
-const bcrypt = require("bcrypt");
-const { createUser,findUserByEmail } = require("../models/userModel");
+// models/userModel.js
+const pool = require("../db");
 
-const registerUser = async (req, res) => {
-  try {
-    const {
-      nombre,
-      apellido,
-      fecha_nacimiento,
-      lugar_nacimiento,
-      direccion_facturacion,
-      genero,
-      correo,
-      contrasena,
-      foto,
-      cedula,
-    } = req.body;
+// Crear usuario
+const createUser = async (userData) => {
+  const {
+    nombre,
+    apellido,
+    fecha_nacimiento,
+    lugar_nacimiento,
+    direccion_facturacion,
+    genero,
+    correo,
+    contrasena,
+    foto,
+    cedula,
+  } = userData;
 
-    // Encriptar contraseña
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(contrasena, salt);
+  const query = `
+    INSERT INTO usuario.usuario
+      (nombre, apellido, fecha_nacimiento, lugar_nacimiento, direccion_facturacion, genero, correo, contrasena, foto, tipo_usuario, cedula)
+    VALUES
+      ($1,$2,$3,$4,$5,$6,$7,$8,$9,'cliente',$10)
+    RETURNING id_usuario, nombre, apellido, correo, tipo_usuario
+  `;
 
-    // Llamar al modelo
-    const newUser = await createUser({
-      nombre,
-      apellido,
-      fecha_nacimiento,
-      lugar_nacimiento,
-      direccion_facturacion,
-      genero,
-      correo,
-      contrasena: hashedPassword,
-      foto,
-      cedula,
-    });
+  const values = [
+    nombre,
+    apellido,
+    fecha_nacimiento,
+    lugar_nacimiento,
+    direccion_facturacion,
+    genero,
+    correo,
+    contrasena,
+    foto || null,
+    cedula,
+  ];
 
-    res.status(201).json({
-      mensaje: "Usuario registrado con éxito",
-      usuario: newUser,
-    });
-  } catch (error) {
-    console.error("Error en registerUser:", error);
-    res.status(500).json({ error: "Error en el servidor" });
-  }
+  const result = await pool.query(query, values);
+  return result.rows[0];
 };
 
-const loginUser = async (req, res) => {
-  try {
-    const { correo, contrasena } = req.body;
-
-    // Buscar usuario
-    const user = await findUserByEmail(correo);
-    if (!user) return res.status(400).json({ error: "Usuario no encontrado" });
-
-    // Validar contraseña
-    const validPassword = await bcrypt.compare(contrasena, user.contrasena);
-    if (!validPassword) return res.status(401).json({ error: "Contraseña incorrecta" });
-
-    res.json({ mensaje: "Login exitoso", usuario: user });
-  } catch (error) {
-    console.error("Error en loginUser:", error);
-    res.status(500).json({ error: "Error en el servidor" });
-  }
+// Buscar usuario por correo
+const findUserByEmail = async (correo) => {
+  const result = await pool.query(
+    "SELECT * FROM usuario.usuario WHERE correo = $1",
+    [correo]
+  );
+  return result.rows[0];
 };
 
-module.exports = { registerUser, loginUser };
+const updateUser = async (id, data) => {
+  const query = `
+    UPDATE usuario
+    SET nombre = $1,
+        apellido = $2,
+        cedula = $3,
+        fecha_nacimiento = $4,
+        telefono = $5,
+        correo = $6
+    WHERE id_usuario = $7
+    RETURNING id_usuario, nombre, apellido, correo, cedula, telefono, fecha_nacimiento;
+  `;
 
+  const values = [
+    data.nombre,
+    data.apellido,
+    data.cedula,
+    data.fecha_nacimiento,
+    data.telefono,
+    data.correo,
+    id
+  ];
+
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
+module.exports = { createUser, findUserByEmail, updateUser };
